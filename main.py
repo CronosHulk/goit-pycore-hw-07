@@ -105,7 +105,6 @@ class AddressBook(UserDict):
                 if 0 <= delta_days <= days:
                     congratulation_date = birthday_this_year
                     if congratulation_date.weekday() >= 5:
-                        # Move to next Monday
                         days_to_monday = 7 - congratulation_date.weekday()
                         congratulation_date += timedelta(days=days_to_monday)
 
@@ -127,6 +126,8 @@ def input_error(func):
         except ValueError as e:
             return str(e)
         except KeyError:
+            return "Contact not found."
+        except AttributeError:
             return "Contact not found."
         except IndexError:
             return "Give me name and phone please."
@@ -157,21 +158,15 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone, *_ = args
     record = book.find(name)
-    if record:
-        record.edit_phone(old_phone, new_phone)
-        return "Contact updated."
-    else:
-        raise KeyError
+    record.edit_phone(old_phone, new_phone)
+    return "Contact updated."
 
 
 @input_error
 def show_phone(args, book: AddressBook):
     name, *_ = args
     record = book.find(name)
-    if record:
-        return '; '.join(p.value for p in record.phones)
-    else:
-        raise KeyError
+    return '; '.join(p.value for p in record.phones)
 
 
 def show_all(_, book: AddressBook):
@@ -184,23 +179,17 @@ def show_all(_, book: AddressBook):
 def add_birthday(args, book: AddressBook):
     name, birthday, *_ = args
     record = book.find(name)
-    if record:
-        record.add_birthday(birthday)
-        return "Birthday added."
-    else:
-        raise KeyError
+    record.add_birthday(birthday)
+    return "Birthday added."
 
 
 @input_error
 def show_birthday(args, book: AddressBook):
     name, *_ = args
     record = book.find(name)
-    if record and record.birthday:
+    if record.birthday:
         return record.birthday.value.strftime('%d.%m.%Y')
-    elif record:
-        return "Birthday not set for this contact."
-    else:
-        raise KeyError
+    return "Birthday not set for this contact."
 
 
 def birthdays(_, book: AddressBook):
@@ -217,7 +206,6 @@ def birthdays(_, book: AddressBook):
 
 def main():
     book = AddressBook()
-    # Для уніфікації викликів, всі функції приймають (args, book)
     command_map = {
         "hello": lambda *_: "How can I help you?",
         "add": add_contact,
@@ -232,6 +220,8 @@ def main():
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
+        if not user_input:
+            continue
         command, *args = parse_input(user_input)
 
         if command in ["close", "exit"]:
